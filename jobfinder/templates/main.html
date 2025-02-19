@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobFinder - Job Listings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<header></header>
+    <div class="header-container">
+        <h1>Welcome to JobFinder</h1>
+        <p>Find your dream job today</p>
+    </div>
+</header>
+<body>
+    <div class="container">
+        <h1>Welcome to JobFinder</h1>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        <div>
+            <h2>Post a New Job</h2>
+            <form action="{{ url_for('post_job') }}" method="POST">
+                <div class="form-group">
+                    <label for="title">Job Title</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" id="company" name="company" required>
+                </div>
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description" required>
+                </div>
+                <button type="submit">Post Job</button>
+            </form>
+        </div>
+
+        <div class="job-list">
+            {% for job in jobs %}
+            <div class="job-card">
+                <h3>{{ job.title }}</h3>
+                <p><strong>Company:</strong> {{ job.company }}</p>
+                <p><strong>Location:</strong> {{ job.location }}</p>
+                <p>{{ job.description }}</p>
+                <p><small>Posted by: {{ job.postedBy }} on {{ job.date }}</small></p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

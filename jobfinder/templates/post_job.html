@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a Job - JobFinder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<header></header>
+    <div class="header-container">
+        <h1>Welcome to JobFinder</h1>
+        <p>Find your dream job today</p>
+    </div>
+</header>
+<body>
+    <div class="container">
+        <h1>Post a New Job</h1>
+        <a href="{{ url_for('main_page') }}">Back to Job Listings</a>
+
+        <form action="{{ url_for('post_job') }}" method="POST">
+            <div class="form-group">
+                <label for="title">Job Title</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="company">Company</label>
+                <input type="text" id="company" name="company" required>
+            </div>
+            <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" name="location" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="5" required></textarea>
+            </div>
+            <button type="submit">Post Job</button>
+        </form>
+    </div>
+</body>
+</html>
