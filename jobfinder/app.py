@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from models import User, Job
 from instance.config import Config
 from db import db
+from datetime import datetime
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -95,7 +96,14 @@ def post_job():
     description = request.form['description']
 
     user = User.query.get(session['current_user'])
-    job = Job(title=title, company=company, location=location, description=description, posted_by=user.id)
+    job = Job(
+        title=title,
+        company=company,
+        location=location,
+        description=description,
+        posted_by=user.email,
+        date_posted=datetime.utcnow()
+    )
     db.session.add(job)
     db.session.commit()
 
