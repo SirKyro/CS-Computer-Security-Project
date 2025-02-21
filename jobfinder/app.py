@@ -1,41 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
+from models import User, Job
+from instance.config import Config
 from db import db
-from models import User
-from instance.config import Config  # Import config
 
 app = Flask(__name__)
-app.config.from_object(Config)  # Load config from config.py
+app.config.from_object(Config)
 db.init_app(app)
 
 @app.route('/')
-def index():
-    return "Hello, JobFinder!"
-
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Ensure tables exist before running
-    app.run(debug=True)
-   
-
-
-
-# In-memory storage
-app_state = {
-    'users': [
-        # Sample user for testing
-        {'name': 'Test User', 'email': 'test@test.com', 'password': 'test123'}
-    ],
-    'jobs': [
-        # Sample job for testing
-        {'title': 'Software Developer', 'company': 'Tech Corp', 'location': 'New York', 'description': 'Looking for a full-stack developer', 'postedBy': 'test@test.com', 'date': '2/19/2025'}
-    ],
-    'current_user': None
-}
-
-@app.route('/')
 def home():
-    if app_state['current_user']:
+    if session.get('current_user'):
         return redirect(url_for('main_page'))
     return redirect(url_for('login'))
 
@@ -47,14 +22,14 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and user.password == password:
+            session['current_user'] = user.id  # Store user ID in session
             flash("Login successful!")
-            return redirect(url_for('dashboard'))  # Redirect to dashboard
+            return redirect(url_for('main_page'))
         else:
             flash("Invalid login credentials")
             return redirect(url_for('login'))
 
     return render_template('login.html')
-
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -78,52 +53,57 @@ def signup():
 
 @app.route('/main', methods=['GET', 'POST'])
 def main_page():
-    if not app_state['current_user']:
+    if not session.get('current_user'):
         return redirect(url_for('login'))
+
+    user = User.query.get(session['current_user'])  # Retrieve the user
     if request.method == 'POST':
         title = request.form['title']
         company = request.form['company']
         location = request.form['location']
         description = request.form['description']
-        app_state['jobs'].append({
-            'title': title, 'company': company, 'location': location, 'description': description,
-            'postedBy': app_state['current_user']['email'], 'date': '2/19/2025'
-        })
+        
+        job = Job(title=title, company=company, location=location, description=description, posted_by=user.id)
+        db.session.add(job)
+        db.session.commit()
+        
         flash('Job posted successfully!')
-    return render_template('main.html', jobs=app_state['jobs'])
+        return redirect(url_for('main_page'))
+
+    jobs = Job.query.all()  # Get all jobs from the database
+    return render_template('main.html', jobs=jobs)
 
 @app.route('/logout')
 def logout():
-    app_state['current_user'] = None
+    session.pop('current_user', None)  # Remove the user from the session
     return redirect(url_for('login'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
 @app.route('/post_job')
 def post_job_page():
-    if 'user' not in session:
-        return redirect(url_for('index'))
+    if not session.get('current_user'):
+        return redirect(url_for('login'))
     return render_template('post_job.html')
 
 @app.route('/post_job', methods=['POST'])
 def post_job():
-    if 'user' not in session:
-        return redirect(url_for('index'))
+    if not session.get('current_user'):
+        return redirect(url_for('login'))
 
     title = request.form['title']
     company = request.form['company']
     location = request.form['location']
     description = request.form['description']
 
-    # Add the new job post to the list (or save to a database in a real app)
-    jobs.append({
-        'title': title,
-        'company': company,
-        'location': location,
-        'description': description,
-        'postedBy': session['user'],
-        'date': '2/19/2025'  # You can replace this with dynamic date
-    })
+    user = User.query.get(session['current_user'])
+    job = Job(title=title, company=company, location=location, description=description, posted_by=user.id)
+    db.session.add(job)
+    db.session.commit()
 
+    flash('Job posted successfully!')
     return redirect(url_for('main_page'))
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Ensure tables exist before running
+    app.run(debug=True)
+
