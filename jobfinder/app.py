@@ -1,7 +1,25 @@
+
 from flask import Flask, render_template, request, redirect, url_for, flash
+from db import db  # Import the db instance
+from models import User  # Import models after db initialization
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///jobfinder.db'
+db.init_app(app)  # Initialize the db with the app
+
+@app.route('/')
+def index():
+    return "Hello, JobFinder!"
+
+if __name__ == '__main__':
+    app.run(debug=True)
+    
+# In app.py
+def create_app():
+    from db import db 
+   
+
+
 
 # In-memory storage
 app_state = {
