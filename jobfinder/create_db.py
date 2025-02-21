@@ -1,7 +1,11 @@
-from app import db
-from models import User  # Import your models here
+from app import app
+from db import db
+from models import User, Job
 
-# Create the database and tables
-db.create_all()
+with app.app_context():
+    db.create_all()
 
 print("Database created successfully!")
+
+
+

@@ -1,22 +1,21 @@
-
 from flask import Flask, render_template, request, redirect, url_for, flash
-from db import db  # Import the db instance
-from models import User  # Import models after db initialization
+from flask_sqlalchemy import SQLAlchemy
+from db import db
+from models import User
+from instance.config import Config  # Import config
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///jobfinder.db'
-db.init_app(app)  # Initialize the db with the app
+app.config.from_object(Config)  # Load config from config.py
+db.init_app(app)
 
 @app.route('/')
 def index():
     return "Hello, JobFinder!"
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()  # Ensure tables exist before running
     app.run(debug=True)
-    
-# In app.py
-def create_app():
-    from db import db 
    
 
 
@@ -48,9 +47,11 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and user.password == password:
-            return redirect(url_for('dashboard'))  # Or wherever you want to redirect after login
+            flash("Login successful!")
+            return redirect(url_for('dashboard'))  # Redirect to dashboard
         else:
-            return "Invalid login credentials", 400
+            flash("Invalid login credentials")
+            return redirect(url_for('login'))
 
     return render_template('login.html')
 
@@ -61,10 +62,16 @@ def signup():
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
-        if any(user['email'] == email for user in app_state['users']):
+
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
             flash('Email already exists!')
             return redirect(url_for('signup'))
-        app_state['users'].append({'name': name, 'email': email, 'password': password})
+
+        new_user = User(name=name, email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
         flash('Account created successfully!')
         return redirect(url_for('login'))
     return render_template('signup.html')
