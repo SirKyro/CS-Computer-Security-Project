@@ -116,6 +116,33 @@ def post_job():
     flash('Job posted successfully!')
     return redirect(url_for('main_page'))
 
+@app.route('/delete_job/<int:job_id>', methods=['GET'])
+def delete_job(job_id):
+    # Vulnerable: No authentication check!
+    job = Job.query.get(job_id)
+    if job:
+        db.session.delete(job)
+        db.session.commit()
+        flash('Job deleted successfully!')
+    return redirect(url_for('main_page'))
+
+@app.route('/admin_panel')
+def admin_panel():
+    # Vulnerable: No admin check!
+    users = User.query.all()
+    jobs = Job.query.all()
+    return render_template('admin.html', users=users, jobs=jobs)
+
+@app.route('/delete_user/<int:user_id>')
+def delete_user(user_id):
+    # Vulnerable: No authentication check!
+    user = User.query.get(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        flash('User deleted successfully!')
+    return redirect(url_for('admin_panel'))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Ensure tables exist before running
