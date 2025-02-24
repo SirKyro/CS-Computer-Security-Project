@@ -4,6 +4,7 @@ from models import User, Job
 from instance.config import Config
 from db import db
 from datetime import datetime
+from sqlalchemy import text  # Add this import at the top
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -18,12 +19,16 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
+        username = request.form['username']
         password = request.form['password']
 
-        user = User.query.filter_by(email=email).first()
-        if user and user.password == password:
-            session['current_user'] = user.id  # Store user ID in session
+        # Vulnerable SQL query - now properly declared as text
+        query = text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
+        result = db.session.execute(query)
+        user = result.fetchone()
+
+        if user:
+            session['current_user'] = user[0]  # user[0] is the id
             flash("Login successful!")
             return redirect(url_for('main_page'))
         else:
@@ -35,16 +40,17 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
+        username = request.form['username']
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
 
-        existing_user = User.query.filter_by(email=email).first()
+        existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            flash('Email already exists!')
+            flash('Username already exists!')
             return redirect(url_for('signup'))
 
-        new_user = User(name=name, email=email, password=password)
+        new_user = User(username=username, name=name, email=email, password=password)
         db.session.add(new_user)
         db.session.commit()
 
