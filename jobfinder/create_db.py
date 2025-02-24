@@ -1,6 +1,7 @@
 from app import app
 from db import db
 from models import User, Job
+import hashlib
 
 with app.app_context():
     # Drop all tables and recreate them
@@ -12,7 +13,8 @@ with app.app_context():
         username='test',
         name='Test User',
         email='test@example.com',
-        password='test123'
+        password=hashlib.md5('test123'.encode()).hexdigest(),
+        favorite_color='blue'
     )
     db.session.add(test_user)
     db.session.commit()

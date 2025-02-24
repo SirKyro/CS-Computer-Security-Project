@@ -4,7 +4,8 @@ from models import User, Job
 from instance.config import Config
 from db import db
 from datetime import datetime
-from sqlalchemy import text  # Add this import at the top
+from sqlalchemy import text
+import hashlib  # Add this import
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -20,18 +21,23 @@ def home():
 def login():
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
+        # Hash the input password for comparison
+        password = hashlib.md5(request.form['password'].encode()).hexdigest()
 
-        # Vulnerable SQL query - now properly declared as text
+        # Vulnerable SQL query with hashed password
         query = text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
         result = db.session.execute(query)
         user = result.fetchone()
 
         if user:
-            session['current_user'] = user[0]  # user[0] is the id
+            # Vulnerable: No session timeout set
+            session['current_user'] = user[0]  # Just stores user ID without any expiration
+            # Vulnerable: No session regeneration
+            # Vulnerable: No remember-me token
             flash("Login successful!")
             return redirect(url_for('main_page'))
         else:
+            # Vulnerable: No login attempt counting
             flash("Invalid login credentials")
             return redirect(url_for('login'))
 
@@ -43,14 +49,21 @@ def signup():
         username = request.form['username']
         name = request.form['name']
         email = request.form['email']
-        password = request.form['password']
+        password = hashlib.md5(request.form['password'].encode()).hexdigest()
+        favorite_color = request.form['favorite_color']
 
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash('Username already exists!')
             return redirect(url_for('signup'))
 
-        new_user = User(username=username, name=name, email=email, password=password)
+        new_user = User(
+            username=username, 
+            name=name, 
+            email=email, 
+            password=password,
+            favorite_color=favorite_color
+        )
         db.session.add(new_user)
         db.session.commit()
 
@@ -82,7 +95,8 @@ def main_page():
 
 @app.route('/logout')
 def logout():
-    session.pop('current_user', None)  # Remove the user from the session
+    # Vulnerable: Doesn't invalidate on server side
+    session.pop('current_user', None)
     return redirect(url_for('login'))
 
 @app.route('/post_job')
@@ -142,6 +156,54 @@ def delete_user(user_id):
         db.session.commit()
         flash('User deleted successfully!')
     return redirect(url_for('admin_panel'))
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form['username']
+        user = User.query.filter_by(username=username).first()
+        
+        if user:
+            session['reset_user'] = user.username
+            return redirect(url_for('security_question'))
+        else:
+            flash('Username not found')
+            
+    return render_template('forgot_password.html')
+
+@app.route('/security_question', methods=['GET', 'POST'])
+def security_question():
+    if 'reset_user' not in session:
+        return redirect(url_for('forgot_password'))
+        
+    if request.method == 'POST':
+        color = request.form['color']
+        user = User.query.filter_by(username=session['reset_user']).first()
+        
+        if user and color == user.favorite_color:
+            return redirect(url_for('reset_password'))
+        else:
+            flash('Incorrect answer')
+            
+    return render_template('security_question.html')
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if 'reset_user' not in session:
+        return redirect(url_for('forgot_password'))
+        
+    if request.method == 'POST':
+        new_password = request.form['new_password']
+        user = User.query.filter_by(username=session['reset_user']).first()
+        
+        if user:
+            user.password = hashlib.md5(new_password.encode()).hexdigest()
+            db.session.commit()
+            session.pop('reset_user', None)
+            flash('Password reset successful!')
+            return redirect(url_for('login'))
+            
+    return render_template('reset_password.html')
 
 if __name__ == '__main__':
     with app.app_context():
