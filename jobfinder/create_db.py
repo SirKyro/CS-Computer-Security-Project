@@ -15,7 +15,6 @@ with app.app_context():
         name='Test User',
         email='test@example.com',
         password=test_password,
-        favorite_color='blue',
         role='user'
     )
     
@@ -26,7 +25,6 @@ with app.app_context():
         name='Admin User',
         email='admin@example.com',
         password=admin_password,
-        favorite_color='red',
         role='admin'
     )
     
