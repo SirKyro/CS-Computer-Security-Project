@@ -333,4 +333,49 @@ textarea:focus {
     color: #166534;
 }
 
+/* Admin panel styles */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--gray-light);
+}
+
+.admin-table th {
+    background-color: var(--primary);
+    color: white;
+}
+
+.delete-btn {
+    background-color: #ef4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+}
+
+.forgot-password {
+    display: block;
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--primary);
+    text-decoration: none;
+    margin-top: 0.5rem;
+}
+
+.forgot-password:hover {
+    color: var(--primary-dark);
+}
+
 
