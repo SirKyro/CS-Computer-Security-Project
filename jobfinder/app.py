@@ -24,10 +24,13 @@ def login():
         # Hash the input password for comparison
         password = hashlib.md5(request.form['password'].encode()).hexdigest()
 
-        # Vulnerable SQL query with hashed password
-        query = text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")
-        result = db.session.execute(query)
-        user = result.fetchone()
+        # More vulnerable SQL query implementation
+        conn = db.engine.raw_connection()
+        cursor = conn.cursor()
+        query = f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'"
+        cursor.execute(query)
+        user = cursor.fetchone()
+        conn.close()
 
         if user:
             # Vulnerable: No session timeout set
