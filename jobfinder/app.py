@@ -99,6 +99,7 @@ def login():
             username = request.form['username']
             password = request.form['password']
             
+            # Secure query using SQLAlchemy ORM
             user = User.query.filter_by(username=username).first()
             
             if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
